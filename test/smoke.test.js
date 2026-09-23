@@ -8,7 +8,7 @@ const port = 31_000 + Math.floor(Math.random() * 500);
 const baseUrl = `http://127.0.0.1:${port}`;
 const server = spawn(process.execPath, ['server.js'], {
   cwd: fileURLToPath(new URL('..', import.meta.url)),
-  env: { ...process.env, PORT: String(port) },
+  env: { ...process.env, NODE_ENV: 'test', PORT: String(port) },
   stdio: ['ignore', 'pipe', 'pipe'],
 });
 

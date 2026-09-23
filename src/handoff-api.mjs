@@ -1,4 +1,20 @@
 import { randomUUID } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+for (const dotenvPath of [resolve(repoRoot, '..', '.env'), resolve(repoRoot, '.env')]) {
+  const contents = await readFile(dotenvPath, 'utf8').catch((error) => {
+    if (error.code === 'ENOENT') return '';
+    throw error;
+  });
+  for (const line of contents.split(/\r?\n/u)) {
+    const match = line.trim().match(/^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/u);
+    if (!match || match[1] in process.env) continue;
+    process.env[match[1]] = match[2].replace(/^(['"])(.*)\1$/u, '$2');
+  }
+}
 
 const providerTimeoutMs = 12_000;
 const allowedAgents = Object.freeze({ sales: 'SALES_AGENT_STUDIO_AGENT_ID', support: 'SUPPORT_AGENT_STUDIO_AGENT_ID' });

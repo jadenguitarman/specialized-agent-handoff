@@ -18,12 +18,16 @@ const MIME_TYPES = Object.freeze({
   '.json': 'application/json; charset=utf-8',
 });
 
-// Load .env without depending on dotenv. Values are used only by server-side provider calls.
-const envFile = await readFile(join(root, '.env'), 'utf8').catch(() => '');
-for (const line of envFile.split(/\r?\n/)) {
-  const match = line.match(/^\s*([A-Z][A-Z0-9_]*)\s*=\s*(.*)\s*$/);
-  if (!match || process.env[match[1]]) continue;
-  process.env[match[1]] = match[2].replace(/^(['"])(.*)\1$/, '$2');
+// Load the shared workspace .env first, then the repo-local fallback. Values are used only by server-side provider calls.
+if (process.env.NODE_ENV !== 'test') {
+  for (const envPath of [join(root, '..', '.env'), join(root, '.env')]) {
+    const envFile = await readFile(envPath, 'utf8').catch(() => '');
+    for (const line of envFile.split(/\r?\n/)) {
+      const match = line.match(/^\s*([A-Z][A-Z0-9_]*)\s*=\s*(.*)\s*$/);
+      if (!match || process.env[match[1]]) continue;
+      process.env[match[1]] = match[2].replace(/^(['"])(.*)\1$/, '$2');
+    }
+  }
 }
 const port = Number.parseInt(process.env.PORT ?? '3000', 10) || 3000;
 

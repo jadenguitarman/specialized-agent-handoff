@@ -1,10 +1,11 @@
-import { algoliaBase, agentSpec, args, flag, indexExists, loadDotEnv, optional, provisionAgent, required, seedSupportIndex, writeProvisionedEnv } from "./provision-lib.mjs";
+import { algoliaBase, agentSpec, args, flag, indexExists, loadDotEnv, optional, provisionAgent, required, seedSupportIndex, syncVercelEnv, writeProvisionedEnv } from "./provision-lib.mjs";
 
 await loadDotEnv();
 const options = args();
 const applicationId = required("ALGOLIA_APPLICATION_ID");
 const productIndex = required("ALGOLIA_PRODUCT_INDEX");
-const supportIndex = optional("ALGOLIA_SUPPORT_INDEX", "agent_studio_support_demo");
+const supportIndex = "agent_studio_support_demo";
+if (productIndex === supportIndex) throw new Error(`ALGOLIA_PRODUCT_INDEX must not be the generated support index: ${supportIndex}`);
 const providerId = optional("AGENT_STUDIO_PROVIDER_ID");
 const model = optional("AGENT_STUDIO_MODEL");
 const publish = options.publish || flag("PUBLISH_AGENTS");
@@ -30,7 +31,10 @@ const specs = [
   },
 ];
 
-const output = {};
+const output = {
+  SALES_AGENT_STUDIO_AGENT_ID: optional("SALES_AGENT_STUDIO_AGENT_ID"),
+  SUPPORT_AGENT_STUDIO_AGENT_ID: optional("SUPPORT_AGENT_STUDIO_AGENT_ID"),
+};
 if (!options.skipAgents) {
   for (const { env, spec } of specs) {
     const agent = await provisionAgent({ base, applicationId, apiKey: agentKey, agentId: optional(env), spec, publish, dryRun: options.dryRun });
@@ -38,6 +42,14 @@ if (!options.skipAgents) {
   }
 }
 if (!options.dryRun) {
-  await writeProvisionedEnv({ ALGOLIA_PRODUCT_INDEX: productIndex, ALGOLIA_SUPPORT_INDEX: supportIndex, SALES_AGENT_STUDIO_AGENT_ID: output.SALES_AGENT_STUDIO_AGENT_ID, SUPPORT_AGENT_STUDIO_AGENT_ID: output.SUPPORT_AGENT_STUDIO_AGENT_ID });
+  if (options.syncVercel && (!output.SALES_AGENT_STUDIO_AGENT_ID || !output.SUPPORT_AGENT_STUDIO_AGENT_ID)) throw new Error("Cannot sync Vercel until both Agent Studio agent IDs exist. Remove --skip-agents or provide both agent IDs.");
+  const runtimeValues = { ALGOLIA_PRODUCT_INDEX: productIndex, ALGOLIA_SUPPORT_INDEX: supportIndex, SALES_AGENT_STUDIO_AGENT_ID: output.SALES_AGENT_STUDIO_AGENT_ID, SUPPORT_AGENT_STUDIO_AGENT_ID: output.SUPPORT_AGENT_STUDIO_AGENT_ID };
+  await writeProvisionedEnv(runtimeValues);
 }
-console.log(`\nNext runtime values:\nALGOLIA_PRODUCT_INDEX=${productIndex}\nALGOLIA_SUPPORT_INDEX=${supportIndex}\nSALES_AGENT_STUDIO_AGENT_ID=${output.SALES_AGENT_STUDIO_AGENT_ID || optional("SALES_AGENT_STUDIO_AGENT_ID", "<created-agent-id>")}\nSUPPORT_AGENT_STUDIO_AGENT_ID=${output.SUPPORT_AGENT_STUDIO_AGENT_ID || optional("SUPPORT_AGENT_STUDIO_AGENT_ID", "<created-agent-id>")}`);
+if (options.syncVercel) await syncVercelEnv({
+  ALGOLIA_APPLICATION_ID: applicationId,
+  ALGOLIA_AGENT_STUDIO_API_KEY: options.dryRun ? "<runtime-key>" : required("ALGOLIA_AGENT_STUDIO_API_KEY"),
+  SALES_AGENT_STUDIO_AGENT_ID: options.dryRun ? "<sales-agent-id>" : output.SALES_AGENT_STUDIO_AGENT_ID,
+  SUPPORT_AGENT_STUDIO_AGENT_ID: options.dryRun ? "<support-agent-id>" : output.SUPPORT_AGENT_STUDIO_AGENT_ID,
+}, { dryRun: options.dryRun });
+console.log(`\nNext runtime values ${options.dryRun ? "would be written to" : "were written to"} .env and provisioned.env:\nALGOLIA_PRODUCT_INDEX=${productIndex}\nALGOLIA_SUPPORT_INDEX=${supportIndex}\nSALES_AGENT_STUDIO_AGENT_ID=${output.SALES_AGENT_STUDIO_AGENT_ID || "<created-agent-id>"}\nSUPPORT_AGENT_STUDIO_AGENT_ID=${output.SUPPORT_AGENT_STUDIO_AGENT_ID || "<created-agent-id>"}`);
