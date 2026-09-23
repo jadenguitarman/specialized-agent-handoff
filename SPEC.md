@@ -21,6 +21,10 @@ Build a local chat demo with separate direct Agent Studio Sales and Support agen
 
 No arbitrary agent IDs, secret transfer, full production identity system, or native Agent Studio handoff claim.
 
+## Provisioning
+
+`npm run provision` verifies the product index, creates and seeds a small support index, and creates or updates the Sales and Support agents through Agent Studio API v1. `ALGOLIA_INDEXING_API_KEY` is used only for index writes; `ALGOLIA_AGENT_STUDIO_MANAGEMENT_API_KEY` is used only for agent create/update/publish; `ALGOLIA_AGENT_STUDIO_API_KEY` remains the runtime completion key. The script never needs an Admin API key. `--dry-run`, `--skip-index`, `--skip-agents`, and `--publish` control the operation.
+
 ## Acceptance
 
-A user can move from Sales to Support without restarting the chat, and every destination and context value is validated by the application.
+A user can move from Sales to Support without restarting the chat, and every destination and context value is validated by the application. The Next.js app serves the browser demo and handles provider calls in Node.js Route Handlers compatible with Vercel.

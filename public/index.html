@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Specialized agent handoff</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Application-owned routing</p>
+          <h1>Specialized agent handoff</h1>
+        </div>
+        <div class="contract-badge"><span class="status-dot"></span> Direct Agent Studio calls</div>
+      </header>
+
+      <section class="intro" aria-labelledby="intro-title">
+        <div>
+          <p class="eyebrow">One conversation surface</p>
+          <h2 id="intro-title">Move the question, not the whole identity.</h2>
+          <p class="intro-copy">Sales and Support are separate agents. This application validates the destination, then transfers only the latest question, a short summary, and approved context.</p>
+        </div>
+        <div class="route-rail" aria-label="Application-owned handoff flow">
+          <div class="route-node active"><span>01</span><strong>Sales</strong><small>active agent</small></div>
+          <div class="route-line"><span>application resolves route</span></div>
+          <div class="route-node"><span>02</span><strong>Support</strong><small>allowlisted destination</small></div>
+        </div>
+      </section>
+
+      <div class="workspace">
+        <section class="chat-card" aria-labelledby="chat-title">
+          <div class="card-head">
+            <div>
+              <p class="eyebrow">Live session</p>
+              <h2 id="chat-title">Conversation</h2>
+            </div>
+            <div class="agent-pill"><span class="status-dot"></span><span id="active-agent">Sales</span> agent</div>
+          </div>
+          <div id="messages" class="messages" aria-live="polite"></div>
+          <div id="handoff-banner" class="handoff-banner hidden" role="status"></div>
+          <form id="chat-form" class="composer">
+            <label class="sr-only" for="message-input">Message the active agent</label>
+            <textarea id="message-input" rows="2" placeholder="Ask Sales about a plan, or ask Support about SAML…" required></textarea>
+            <div class="composer-actions">
+              <span id="composer-note">Messages go to the active agent.</span>
+              <button id="send-button" class="button primary" type="submit">Send message <span>↗</span></button>
+            </div>
+          </form>
+          <div class="chat-footer">
+            <button id="handoff-button" class="button secondary" type="button">Switch to Support <span>→</span></button>
+            <button id="cancel-button" class="button quiet hidden" type="button">Cancel request</button>
+            <span class="footer-note">The switch is controlled by this application, not by Agent Studio.</span>
+          </div>
+        </section>
+
+        <aside class="side-column">
+          <section class="panel transfer-panel" aria-labelledby="transfer-title">
+            <div class="panel-heading"><p class="eyebrow">Handoff packet</p><h2 id="transfer-title">Approved context</h2></div>
+            <p class="panel-copy">Only these fields can cross the route boundary.</p>
+            <dl class="context-list">
+              <div><dt>User</dt><dd>demo-user-01</dd></div>
+              <div><dt>Tenant</dt><dd>northstar-demo</dd></div>
+              <div><dt>Plan</dt><dd>Growth</dd></div>
+            </dl>
+            <div class="packet-meter"><div class="meter-label"><span>Packet size</span><strong id="packet-size">—</strong></div><div class="meter-track"><span id="packet-meter-fill"></span></div></div>
+          </section>
+
+          <section class="panel activity-panel" aria-labelledby="activity-title">
+            <div class="panel-heading"><p class="eyebrow">Local record</p><h2 id="activity-title">Handoff activity</h2></div>
+            <div id="activity-empty" class="activity-empty">No handoff recorded yet.</div>
+            <div id="activity-list" class="activity-list"></div>
+          </section>
+
+          <section id="config-panel" class="config-note" role="status">
+            <span class="status-dot"></span><span id="config-message">Checking server configuration…</span>
+          </section>
+        </aside>
+      </div>
+      <footer class="page-footer"><span>Demo boundary</span><span>•</span><span>No native agent-to-agent handoff claim</span></footer>
+    </main>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
