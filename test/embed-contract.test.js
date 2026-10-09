@@ -10,6 +10,9 @@ test('ships a single-script widget with an explicit API base and handoff control
   assert.match(script, /\/api\/chat/);
   assert.match(script, /\/api\/handoff/);
   assert.match(script, /attachShadow/);
+  assert.match(script, /dataset\.open/);
+  assert.match(script, /desktop-persistent/);
+  assert.match(script, /min-width: 768px/);
   assert.match(script, /Switch to Support/);
 });
 

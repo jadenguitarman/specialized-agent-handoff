@@ -7,6 +7,7 @@
   const apiBase = (script.dataset.apiBase || new URL(script.src, document.baseURI).origin).replace(/\/$/u, '');
   const config = Object.freeze({
     apiBase,
+    openMode: script.dataset.open === 'desktop' ? 'desktop' : 'click',
     title: script.dataset.title || 'Ask the specialists',
     intro: script.dataset.intro || 'Start with Sales. If your question needs account help, we can bring Support into the same conversation.',
     userId: script.dataset.userId || 'demo-user-01',
@@ -34,6 +35,9 @@
       .unread { background: #e27a55; border: 3px solid #fff; border-radius: 50%; height: 13px; position: absolute; right: 0; top: 0; width: 13px; }
       .panel { background: #fbfaf7; border: 1px solid rgba(39, 58, 49, .12); border-radius: 22px; bottom: 94px; box-shadow: 0 24px 70px rgba(26, 48, 38, .2), 0 3px 12px rgba(26, 48, 38, .1); display: flex; flex-direction: column; max-height: min(680px, calc(100vh - 120px)); opacity: 0; overflow: hidden; pointer-events: none; position: fixed; ${config.position}: 24px; transform: translateY(10px) scale(.98); transform-origin: bottom ${config.position}; transition: opacity 150ms ease, transform 150ms ease; width: min(382px, calc(100vw - 32px)); z-index: 2147482999; }
       .panel.open { opacity: 1; pointer-events: auto; transform: translateY(0) scale(1); }
+      .desktop-persistent .launcher { display: none; }
+      .desktop-persistent .panel { border-radius: 0; bottom: 0; max-height: none; opacity: 1; pointer-events: auto; right: 0; top: 0; transform: none; width: min(520px, 44vw); }
+      .desktop-persistent .close { display: none; }
       .header { background: #273a31; color: #fff; padding: 19px 18px 17px; }
       .header-row { align-items: flex-start; display: flex; justify-content: space-between; gap: 12px; }
       .eyebrow { color: #b9d0bf; font-size: 10px; font-weight: 700; letter-spacing: .13em; margin: 0 0 6px; text-transform: uppercase; }
@@ -74,7 +78,7 @@
       .config.missing { color: #a24c3d; }
       .hidden { display: none !important; }
       @media (prefers-reduced-motion: reduce) { .launcher, .panel, .send, .handoff, .cancel { transition: none; } }
-      @media (max-width: 480px) { .launcher { bottom: 16px; ${config.position}: 16px; } .panel { bottom: 84px; ${config.position}: 8px; max-height: calc(100vh - 100px); width: calc(100vw - 16px); } }
+      @media (max-width: 767px) { .desktop-persistent .launcher { display: flex; } .desktop-persistent .panel { border-radius: 22px; bottom: 84px; max-height: calc(100vh - 100px); opacity: 0; pointer-events: none; right: 8px; top: auto; transform: translateY(10px) scale(.98); width: calc(100vw - 16px); } .desktop-persistent .panel.open { opacity: 1; pointer-events: auto; transform: translateY(0) scale(1); } .desktop-persistent .close { display: flex; } .launcher { bottom: 16px; ${config.position}: 16px; } .panel { bottom: 84px; ${config.position}: 8px; max-height: calc(100vh - 100px); width: calc(100vw - 16px); } }
     </style>
     <div class="widget">
       <button class="launcher" type="button" aria-expanded="false" aria-controls="specialized-agent-panel" aria-label="Open specialist chat">
@@ -91,6 +95,7 @@
   `;
 
   const elements = {
+    widget: shadow.querySelector('.widget'),
     launcher: shadow.querySelector('.launcher'),
     unread: shadow.querySelector('.unread'),
     panel: shadow.querySelector('.panel'),
@@ -117,6 +122,7 @@
     lastFocus: null,
   };
   const context = { userId: config.userId, tenantId: config.tenantId, plan: config.plan };
+  const desktopQuery = window.matchMedia('(min-width: 768px)');
 
   function setStatus(message, error = false) {
     elements.status.textContent = message || '';
@@ -235,14 +241,14 @@
     }
   }
 
-  function setOpen(open) {
+  function setOpen(open, { focus = true } = {}) {
     state.open = open;
     elements.panel.classList.toggle('open', open);
     elements.panel.inert = !open;
     elements.panel.setAttribute('aria-hidden', String(!open));
     elements.launcher.setAttribute('aria-expanded', String(open));
     elements.unread.classList.toggle('hidden', open);
-    if (open) {
+    if (open && focus) {
       state.lastFocus = document.activeElement;
       window.setTimeout(() => elements.input.focus(), 0);
     } else if (state.lastFocus && typeof state.lastFocus.focus === 'function') {
@@ -255,8 +261,25 @@
   elements.form.addEventListener('submit', sendMessage);
   elements.handoff.addEventListener('click', handoff);
   elements.cancel.addEventListener('click', () => state.pending?.controller.abort());
-  document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && state.open) setOpen(false); });
-  elements.panel.inert = true;
+  document.addEventListener('keydown', (event) => {
+    const persistentDesktop = config.openMode === 'desktop' && desktopQuery.matches;
+    if (event.key === 'Escape' && state.open && !persistentDesktop) setOpen(false);
+  });
+
+  function applyOpenMode({ initial = false } = {}) {
+    const persistent = config.openMode === 'desktop' && desktopQuery.matches;
+    elements.widget.classList.toggle('desktop-persistent', persistent);
+    if (persistent !== state.open) setOpen(persistent, { focus: !initial });
+    else {
+      elements.panel.inert = !state.open;
+      elements.panel.setAttribute('aria-hidden', String(!state.open));
+    }
+  }
+
+  const handleDesktopChange = () => applyOpenMode();
+  if (desktopQuery.addEventListener) desktopQuery.addEventListener('change', handleDesktopChange);
+  else desktopQuery.addListener(handleDesktopChange);
+  applyOpenMode({ initial: true });
 
   async function loadConfig() {
     try {

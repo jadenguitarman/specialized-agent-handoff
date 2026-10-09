@@ -10,6 +10,7 @@ The same demo is available as a floating, single-script widget. Host this reposi
 <script
   src="https://YOUR-DEMO-DOMAIN.example/embed.js"
   data-api-base="https://YOUR-DEMO-DOMAIN.example"
+  data-open="desktop"
   data-title="Ask the specialists"
   data-user-id="article-demo-user"
   data-tenant-id="article-demo"
@@ -19,6 +20,8 @@ The same demo is available as a floating, single-script widget. Host this reposi
 ```
 
 The script creates a shadow-DOM launcher and chat panel, so its styles do not leak into the article. `data-api-base` is required when the article and demo are on different origins. Configure the server with `EMBED_ALLOWED_ORIGINS=https://your-blog.example` (comma-separated for multiple origins); the API does not allow arbitrary cross-origin callers. The default identity values in the script are demo fixtures—use server-authenticated context before treating this as a production identity boundary.
+
+Set `data-open="desktop"` to keep the chat panel open as a right-side rail on desktop while returning to the launcher-and-overlay pattern on mobile. Omit it, or use another value, for the normal click-to-open widget at every viewport size.
 
 The launcher supports normal Sales chat, an application-owned Sales-to-Support switch, visible errors, cancellation, and responsive mobile layout. The widget calls `/api/config`, `/api/chat`, and `/api/handoff` on the configured API base.
 
