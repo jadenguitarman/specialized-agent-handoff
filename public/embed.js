@@ -148,6 +148,7 @@
   const state = {
     open: false,
     agent: 'sales',
+    contextAgent: 'sales',
     messages: [],
     timeline: [],
     conversationId: `embed_${crypto.randomUUID()}`,
@@ -330,7 +331,7 @@
     const previousScrollTop = elements.messages.scrollTop;
     const wasAtBottom = elements.messages.scrollHeight - elements.messages.clientHeight - previousScrollTop <= 8;
     let focusElement = null;
-    elements.viewOptions.forEach((option) => option.setAttribute('aria-checked', String(option.dataset.agent === state.agent)));
+    elements.viewOptions.forEach((option) => option.setAttribute('aria-checked', String(option.dataset.agent === state.contextAgent)));
     elements.messages.replaceChildren();
     const label = document.createElement('div');
     label.className = 'conversation-label';
@@ -556,8 +557,9 @@
   }
 
   function selectAgent(agent) {
-    if (state.pending || !labels[agent] || state.agent === agent) return;
+    if (state.pending || !labels[agent] || state.contextAgent === agent) return;
     clearSampleSelection();
+    state.contextAgent = agent;
     state.agent = agent;
     state.messages = [];
     state.timeline = [];

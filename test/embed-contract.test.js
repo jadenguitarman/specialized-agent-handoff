@@ -29,6 +29,7 @@ test('ships a single-script widget with an explicit API base and handoff control
   assert.match(script, /messageTop - messagesTop - 21/);
   assert.match(script, /transferOpeningTimer/);
   assert.match(script, /showTransferOpening/);
+  assert.match(script, /option\.dataset\.agent === state\.contextAgent/);
   assert.match(script, /typing-dot/);
   assert.match(script, /typing-entry/);
   assert.match(script, /\}, 500\)/);
