@@ -71,6 +71,11 @@
       .transfer-event.error, .transfer-event.cancelled { color: #a24c3d; }
       .message { display: flex; gap: 8px; max-width: 91%; }
       .message.user { align-self: flex-end; flex-direction: row-reverse; }
+      .typing-bubble { align-items: center; display: flex; gap: 4px; min-height: 38px; }
+      .typing-dot { animation: typing-dot 1.1s ease-in-out infinite; background: #78927d; border-radius: 50%; height: 5px; width: 5px; }
+      .typing-dot:nth-child(2) { animation-delay: 140ms; }
+      .typing-dot:nth-child(3) { animation-delay: 280ms; }
+      @keyframes typing-dot { 0%, 60%, 100% { opacity: .35; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
       .avatar { align-items: center; background: #dbe9dc; border-radius: 50%; color: #385944; display: flex; flex: 0 0 28px; font-size: 11px; font-weight: 800; height: 28px; justify-content: center; width: 28px; }
       .user .avatar { background: #e7d7bd; color: #694d2e; }
       .bubble-wrap { min-width: 0; }
@@ -106,7 +111,7 @@
       .send:active, .cancel:active { transform: scale(.96); }
       button:disabled, textarea:disabled { cursor: wait; opacity: .58; }
       .hidden { display: none !important; }
-      @media (prefers-reduced-motion: reduce) { .launcher, .panel, .view-option, .sample-question, .send, .cancel { transition: none; } }
+      @media (prefers-reduced-motion: reduce) { .launcher, .panel, .view-option, .sample-question, .send, .cancel { transition: none; } .typing-dot { animation: none; opacity: .65; } }
       @media (max-width: 767px) { .desktop-persistent .launcher { display: flex; } .desktop-persistent .panel { border-radius: 22px; bottom: 84px; max-height: calc(100vh - 100px); opacity: 0; pointer-events: none; right: 8px; top: auto; transform: translateY(10px) scale(.98); width: calc(100vw - 16px); } .desktop-persistent .panel.open { opacity: 1; pointer-events: auto; transform: translateY(0) scale(1); } .desktop-persistent .close { display: flex; } .launcher { bottom: 16px; ${config.position}: 16px; } .panel { bottom: 84px; ${config.position}: 8px; max-height: calc(100vh - 100px); width: calc(100vw - 16px); } .panel-top { align-items: flex-start; } .view-switcher { grid-template-columns: 1fr; } }
     </style>
     <div class="widget">
@@ -373,10 +378,35 @@
       row.append(avatar, wrap);
       elements.messages.append(row);
     }
+    if (state.pending) {
+      const row = document.createElement('article');
+      row.className = 'message assistant';
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar';
+      avatar.textContent = state.agent === 'sales' ? 'S' : 'P';
+      const wrap = document.createElement('div');
+      wrap.className = 'bubble-wrap';
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      meta.textContent = `${labels[state.agent]} specialist`;
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble typing-bubble';
+      bubble.setAttribute('role', 'status');
+      bubble.setAttribute('aria-label', `${labels[state.agent]} specialist is typing`);
+      for (let index = 0; index < 3; index += 1) {
+        const dot = document.createElement('span');
+        dot.className = 'typing-dot';
+        dot.setAttribute('aria-hidden', 'true');
+        bubble.append(dot);
+      }
+      wrap.append(meta, bubble);
+      row.append(avatar, wrap);
+      elements.messages.append(row);
+    }
     if (focusElement && wasAtBottom && focusElement.offsetHeight > elements.messages.clientHeight) {
       const messagesTop = elements.messages.getBoundingClientRect().top;
       const messageTop = focusElement.getBoundingClientRect().top;
-      elements.messages.scrollTop = Math.max(0, elements.messages.scrollTop + messageTop - messagesTop - 1);
+      elements.messages.scrollTop = Math.max(0, elements.messages.scrollTop + messageTop - messagesTop - 11);
     } else if (scroll === 'bottom' || wasAtBottom) {
       elements.messages.scrollTop = elements.messages.scrollHeight;
     } else {
@@ -449,12 +479,12 @@
   async function submitMessage(content) {
     const messageContent = content.trim();
     if (!messageContent || state.pending) return;
-    addMessage('user', messageContent);
-    elements.input.value = '';
-    render({ scroll: 'bottom' });
     const controller = new AbortController();
     setPending({ controller });
+    addMessage('user', messageContent);
+    elements.input.value = '';
     setStatus('');
+    render({ scroll: 'bottom' });
     try {
       const response = await request('/api/chat', { agent: state.agent, conversationId: state.conversationId, messages: state.messages.slice(-12).map(({ role, content: messageContent }) => ({ role, content: messageContent })) }, controller);
       if (response.transfer) await transferTo(response.transfer.destination, controller);
