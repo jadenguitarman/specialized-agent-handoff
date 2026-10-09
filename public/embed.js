@@ -169,6 +169,10 @@
     return `${labels[agent]} specialist`;
   }
 
+  function transferOpening(agent) {
+    return `Hi, I'm a ${specialistLabel(agent)}. I just caught up on your conversation; let's see how I can help.`;
+  }
+
   function addMessage(role, content, agent = state.agent) {
     const message = { kind: 'message', role, content, agent };
     state.messages.push({ role, content });
@@ -464,6 +468,16 @@
     const sourceAgent = state.agent;
     addMessage('assistant', `That's a good question for a ${specialistLabel(destination)}. Let me loop them in.`, sourceAgent);
     const event = addTransferEvent(destination);
+    let transferOpeningMessage = null;
+    let transferResponseAccepted = false;
+    const showTransferOpening = (content = transferOpening(destination)) => {
+      if (transferOpeningMessage) return;
+      event.status = 'complete';
+      state.agent = destination;
+      transferOpeningMessage = addMessage('assistant', content, destination);
+      render();
+    };
+    const transferOpeningTimer = window.setTimeout(showTransferOpening, 500);
     render();
     try {
       const response = await request('/api/transfer', {
@@ -472,15 +486,22 @@
         conversationId: state.conversationId,
         messages: state.messages.slice(-12).map(({ role, content }) => ({ role, content })),
       }, controller);
-      event.status = 'complete';
+      transferResponseAccepted = true;
+      window.clearTimeout(transferOpeningTimer);
+      showTransferOpening(response.opening);
       state.agent = destination;
       state.conversationId = response.conversationId || `embed_${crypto.randomUUID()}`;
-      if (response.opening) addMessage('assistant', response.opening, destination);
       if (response.content) addMessage('assistant', response.content, destination);
       const focusMessage = state.timeline.filter((item) => item.kind === 'message' && item.role === 'assistant').at(-1);
       render({ focusMessage });
       if (response.transfer && depth < 2) await transferTo(response.transfer.destination, controller, depth + 1);
     } catch (error) {
+      window.clearTimeout(transferOpeningTimer);
+      if (!transferResponseAccepted && transferOpeningMessage) {
+        if (state.messages.at(-1)?.content === transferOpeningMessage.content) state.messages.pop();
+        state.timeline = state.timeline.filter((item) => item !== transferOpeningMessage);
+        state.agent = sourceAgent;
+      }
       event.status = error.name === 'AbortError' ? 'cancelled' : 'error';
       render();
       throw error;
