@@ -14,6 +14,18 @@
     position: script.dataset.position === 'left' ? 'left' : 'right',
   });
   const labels = Object.freeze({ sales: 'Sales', support: 'Support' });
+  const sampleQuestions = Object.freeze({
+    sales: Object.freeze([
+      'Find a Bluetooth music receiver under $50.',
+      'What tablets are available around $150?',
+      'Compare projector options for a home theater.',
+    ]),
+    support: Object.freeze([
+      'Why is SAML login failing?',
+      'What should I confirm before changing a plan?',
+      'Which API key should I use for runtime search versus indexing?',
+    ]),
+  });
 
   const host = document.createElement('div');
   host.dataset.specializedAgentHandoffWidget = 'true';
@@ -48,6 +60,12 @@
       .messages { background: #f5f2ec; display: flex; flex: 1; flex-direction: column; gap: 12px; min-height: 170px; overflow-y: auto; padding: 17px 15px; }
       .conversation-label, .transfer-event { align-self: center; color: #78847b; font: 500 10px/1.3 Inter, ui-sans-serif, system-ui, sans-serif; letter-spacing: .02em; max-width: 90%; padding: 3px 8px; text-align: center; }
       .conversation-label { margin: 1px auto 5px; }
+      .sample-questions { display: grid; gap: 8px; margin: 2px auto 7px; max-width: 330px; width: 100%; }
+      .sample-question { background: rgba(255,255,255,.72); border: 1px solid rgba(39,58,49,.14); border-radius: 10px; color: #486052; cursor: pointer; font: 500 11px/1.35 Inter, ui-sans-serif, system-ui, sans-serif; min-height: 40px; padding: 8px 10px; text-align: left; transition: opacity 140ms ease, transform 140ms ease, background-color 140ms ease, border-color 140ms ease; }
+      .sample-question:hover { background: #fff; border-color: rgba(39,58,49,.28); color: #28332d; }
+      .sample-question:active { transform: scale(.96); }
+      .sample-question.is-selected { background: #dbe9dc; border-color: #b8ceb9; color: #273a31; }
+      .sample-question.is-dismissing { opacity: 0; pointer-events: none; transform: translateY(-5px) scale(.96); }
       .transfer-event { color: #a27a47; }
       .transfer-event.complete { color: #4c7956; }
       .transfer-event.error, .transfer-event.cancelled { color: #a24c3d; }
@@ -83,7 +101,7 @@
       .send:active, .cancel:active { transform: scale(.96); }
       button:disabled, textarea:disabled { cursor: wait; opacity: .58; }
       .hidden { display: none !important; }
-      @media (prefers-reduced-motion: reduce) { .launcher, .panel, .view-option, .send, .cancel { transition: none; } }
+      @media (prefers-reduced-motion: reduce) { .launcher, .panel, .view-option, .sample-question, .send, .cancel { transition: none; } }
       @media (max-width: 767px) { .desktop-persistent .launcher { display: flex; } .desktop-persistent .panel { border-radius: 22px; bottom: 84px; max-height: calc(100vh - 100px); opacity: 0; pointer-events: none; right: 8px; top: auto; transform: translateY(10px) scale(.98); width: calc(100vw - 16px); } .desktop-persistent .panel.open { opacity: 1; pointer-events: auto; transform: translateY(0) scale(1); } .desktop-persistent .close { display: flex; } .launcher { bottom: 16px; ${config.position}: 16px; } .panel { bottom: 84px; ${config.position}: 8px; max-height: calc(100vh - 100px); width: calc(100vw - 16px); } .panel-top { align-items: flex-start; } .view-switcher { grid-template-columns: 1fr; } }
     </style>
     <div class="widget">
@@ -122,6 +140,8 @@
     timeline: [],
     conversationId: `embed_${crypto.randomUUID()}`,
     pending: null,
+    sampleSelection: null,
+    sampleTimer: null,
     lastFocus: null,
   };
   const desktopQuery = window.matchMedia('(min-width: 768px)');
@@ -239,6 +259,23 @@
     label.className = 'conversation-label';
     label.textContent = `Chatting with the ${specialistLabel(state.agent)}`;
     elements.messages.append(label);
+    if (!state.timeline.length) {
+      const samples = document.createElement('div');
+      samples.className = 'sample-questions';
+      for (const question of sampleQuestions[state.agent]) {
+        const button = document.createElement('button');
+        button.className = 'sample-question';
+        button.type = 'button';
+        button.textContent = question;
+        button.disabled = Boolean(state.sampleSelection);
+        if (state.sampleSelection) {
+          button.classList.add(question === state.sampleSelection ? 'is-selected' : 'is-dismissing');
+        }
+        button.addEventListener('click', () => chooseSampleQuestion(question));
+        samples.append(button);
+      }
+      elements.messages.append(samples);
+    }
     for (const item of state.timeline) {
       if (item.kind === 'transfer') {
         const transfer = document.createElement('div');
@@ -324,11 +361,21 @@
     }
   }
 
-  async function sendMessage(event) {
-    event.preventDefault();
-    const content = elements.input.value.trim();
-    if (!content || state.pending) return;
-    addMessage('user', content);
+  function chooseSampleQuestion(question) {
+    if (state.pending || state.sampleSelection) return;
+    state.sampleSelection = question;
+    render();
+    state.sampleTimer = window.setTimeout(() => {
+      state.sampleSelection = null;
+      state.sampleTimer = null;
+      submitMessage(question);
+    }, 170);
+  }
+
+  async function submitMessage(content) {
+    const messageContent = content.trim();
+    if (!messageContent || state.pending) return;
+    addMessage('user', messageContent);
     elements.input.value = '';
     render();
     const controller = new AbortController();
@@ -347,8 +394,20 @@
     }
   }
 
+  function sendMessage(event) {
+    event.preventDefault();
+    return submitMessage(elements.input.value);
+  }
+
+  function clearSampleSelection() {
+    if (state.sampleTimer) window.clearTimeout(state.sampleTimer);
+    state.sampleSelection = null;
+    state.sampleTimer = null;
+  }
+
   function selectAgent(agent) {
     if (state.pending || !labels[agent] || state.agent === agent) return;
+    clearSampleSelection();
     state.agent = agent;
     state.messages = [];
     state.timeline = [];
@@ -377,6 +436,11 @@
   elements.close.addEventListener('click', () => setOpen(false));
   elements.viewOptions.forEach((option) => option.addEventListener('click', () => selectAgent(option.dataset.agent)));
   elements.form.addEventListener('submit', sendMessage);
+  elements.input.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' || event.shiftKey || event.isComposing) return;
+    event.preventDefault();
+    elements.form.requestSubmit();
+  });
   elements.cancel.addEventListener('click', () => state.pending?.controller.abort());
   document.addEventListener('keydown', (event) => {
     const persistentDesktop = config.openMode === 'desktop' && desktopQuery.matches;

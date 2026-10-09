@@ -15,6 +15,8 @@ test('ships a single-script widget with an explicit API base and handoff control
   assert.match(script, /min-width: 768px/);
   assert.match(script, /renderMarkdown/);
   assert.match(script, /role="radio"/);
+  assert.match(script, /sample-question/);
+  assert.match(script, /requestSubmit/);
   assert.match(script, /Transferring to the/);
   assert.doesNotMatch(script, /Application-owned routing/);
   assert.doesNotMatch(script, /Connected to Agent Studio/);
