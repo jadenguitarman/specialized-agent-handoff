@@ -19,6 +19,9 @@ for (const dotenvPath of [resolve(repoRoot, '..', '.env'), resolve(repoRoot, '.e
 const providerTimeoutMs = 12_000;
 const allowedAgents = Object.freeze({ sales: 'SALES_AGENT_STUDIO_AGENT_ID', support: 'SUPPORT_AGENT_STUDIO_AGENT_ID' });
 const allowedDestinations = new Set(Object.keys(allowedAgents));
+const specialistLabels = Object.freeze({ sales: 'Sales', support: 'Support' });
+const transferTargets = Object.freeze({ sales: 'support', support: 'sales' });
+const transferToolNames = Object.freeze({ sales: 'transfer_to_support', support: 'transfer_to_sales' });
 
 export class ValidationError extends Error {}
 
@@ -127,6 +130,19 @@ function responseText(payload) {
   return '';
 }
 
+function responseTransfer(payload, agent) {
+  const toolName = transferToolNames[agent];
+  const part = Array.isArray(payload?.parts)
+    ? payload.parts.find((candidate) => candidate?.type === `tool-${toolName}` && (typeof candidate.tool_call_id === 'string' || typeof candidate.toolCallId === 'string'))
+    : null;
+  if (!part) return null;
+  return {
+    destination: transferTargets[agent],
+    toolCallId: part.tool_call_id || part.toolCallId,
+    reason: typeof part.input?.reason === 'string' ? part.input.reason.slice(0, 300) : '',
+  };
+}
+
 async function callAgent(agent, messages, signal, conversationId) {
   if (!providerReady(agent)) {
     const error = new Error('Agent Studio is not configured. Add the server-side values from .env.example.');
@@ -145,6 +161,8 @@ async function callAgent(agent, messages, signal, conversationId) {
   });
   if (!response.ok) throw providerError(response.status, (await response.text().catch(() => '')).slice(0, 240));
   const payload = await response.json();
+  const transfer = responseTransfer(payload, agent);
+  if (transfer) return { transfer, messageId: payload.messageId || payload.id || null };
   const content = responseText(payload);
   if (!content) {
     const error = new Error('Agent Studio returned no assistant text.');
@@ -178,6 +196,17 @@ function handoffPrompt({ latestQuestion, summary, context }) {
     `Sales summary:\n${summary}`,
     `Approved context:\n${JSON.stringify(context)}`,
   ].join('\n');
+}
+
+function transferOpening(agent) {
+  return `Hi, I'm a ${specialistLabels[agent]} specialist. I just caught up on your conversation; let's see how I can help.`;
+}
+
+function transferContinuation(agent) {
+  return [
+    `You are now the ${specialistLabels[agent]} specialist receiving an application-owned transfer.`,
+    'Write the next helpful response from here. Do not repeat the specialist introduction or mention internal routing.',
+  ].join(' ');
 }
 
 export function publicConfig() {
@@ -214,6 +243,28 @@ export async function handleHandoff(body, signal) {
       latencyMs: Date.now() - startedAt,
       contextBytes: Buffer.byteLength(JSON.stringify(input.context)),
     },
+  };
+}
+
+export async function handleTransfer(body, signal) {
+  const sourceAgent = validateAgent(body?.sourceAgent);
+  const destination = validateAgent(body?.destination);
+  if (destination !== transferTargets[sourceAgent]) {
+    throw new ValidationError(`A ${specialistLabels[sourceAgent]} specialist can only transfer to the ${specialistLabels[destination]} specialist.`);
+  }
+  const messages = validateMessages(body?.messages);
+  const conversationId = optionalText(body?.conversationId, 'conversationId', 120) || `transfer_${randomUUID()}`;
+  const opening = transferOpening(destination);
+  const result = await callWithRetry(destination, [
+    ...messages,
+    { id: `msg_${randomUUID()}`, role: 'assistant', parts: [{ type: 'text', text: opening }] },
+    { id: `msg_${randomUUID()}`, role: 'user', parts: [{ type: 'text', text: transferContinuation(destination) }] },
+  ], signal, conversationId);
+  return {
+    ...result,
+    agent: destination,
+    opening,
+    transfer: result.transfer ? { ...result.transfer, sourceAgent: destination } : null,
   };
 }
 

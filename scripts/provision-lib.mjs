@@ -115,14 +115,26 @@ export async function seedSupportIndex({ base, applicationId, apiKey, index, dry
   console.log(`Seeded ${records.length} support records into ${index}.`);
 }
 
-export function agentSpec({ name, description, instructions, providerId, model, indices, toolName }) {
+export function agentSpec({ name, description, instructions, providerId, model, indices, toolName, transferToolName, transferDescription }) {
   return {
     name,
     description,
     ...(providerId ? { providerId } : {}),
     ...(model ? { model } : {}),
     instructions,
-    tools: [{ type: "algolia_search_index", name: toolName, indices: indices.map(({ index, description: indexDescription }) => ({ index, description: indexDescription })) }],
+    tools: [
+      { type: "algolia_search_index", name: toolName, indices: indices.map(({ index, description: indexDescription }) => ({ index, description: indexDescription })) },
+      {
+        type: "client_side",
+        name: transferToolName,
+        description: transferDescription,
+        inputSchema: {
+          type: "object",
+          properties: { reason: { type: "string", description: "Short reason for transferring the conversation." } },
+          required: ["reason"],
+        },
+      },
+    ],
   };
 }
 

@@ -13,7 +13,7 @@ export default function Page() {
           </div>
           <div className="usage-note">
             <span className="usage-number">02</span>
-            <div><strong>Switch to Support</strong><span>Transfer the latest question, a concise summary, and approved context only.</span></div>
+            <div><strong>Choose the context</strong><span>Toggle the view to start a fresh conversation with that specialist.</span></div>
           </div>
           <div className="usage-note">
             <span className="usage-number">03</span>
@@ -25,8 +25,6 @@ export default function Page() {
       <Script
         src="/embed.js"
         data-open="desktop"
-        data-title="Ask the specialists"
-        data-intro="Start with Sales. If your question needs account help, we can bring Support into the same conversation."
         data-user-id="demo-user-01"
         data-tenant-id="northstar-demo"
         data-plan="growth"

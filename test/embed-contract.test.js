@@ -8,12 +8,17 @@ test('ships a single-script widget with an explicit API base and handoff control
   const script = await readFile(new URL('public/embed.js', root), 'utf8');
   assert.match(script, /dataset\.apiBase/);
   assert.match(script, /\/api\/chat/);
-  assert.match(script, /\/api\/handoff/);
+  assert.match(script, /\/api\/transfer/);
   assert.match(script, /attachShadow/);
   assert.match(script, /dataset\.open/);
   assert.match(script, /desktop-persistent/);
   assert.match(script, /min-width: 768px/);
-  assert.match(script, /Switch to Support/);
+  assert.match(script, /renderMarkdown/);
+  assert.match(script, /role="radio"/);
+  assert.match(script, /Transferring to the/);
+  assert.doesNotMatch(script, /Application-owned routing/);
+  assert.doesNotMatch(script, /Connected to Agent Studio/);
+  assert.doesNotMatch(script, /Switch to Support/);
 });
 
 test('documents cross-origin configuration without wildcard access', async () => {
