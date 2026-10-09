@@ -69,7 +69,6 @@ function validateMessages(value) {
     return {
       id: typeof message.id === 'string' ? message.id.slice(0, 120) : `msg_${randomUUID()}`,
       role: message.role,
-      content,
       parts: [{ type: 'text', text: content }],
     };
   });
@@ -202,9 +201,7 @@ export async function handleHandoff(body, signal) {
   const handoffMessage = {
     id: `msg_${randomUUID()}`,
     role: 'user',
-    content,
     parts: [{ type: 'text', text: content }],
-    conversationId: input.conversationId,
   };
   const result = await callWithRetry(input.destination, [handoffMessage], signal, input.conversationId);
   return {

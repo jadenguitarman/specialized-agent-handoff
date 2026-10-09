@@ -121,7 +121,6 @@ function validateMessages(value) {
     return {
       id: typeof message.id === 'string' ? message.id.slice(0, 120) : `msg_${randomUUID()}`,
       role: message.role,
-      content: text(message.content, `messages[${index}].content`, 4_000),
       parts: [{ type: 'text', text: text(message.content, `messages[${index}].content`, 4_000) }],
     };
   });
@@ -300,9 +299,7 @@ const server = createServer(async (req, res) => {
         const handoffMessage = {
           id: `msg_${randomUUID()}`,
           role: 'user',
-          content: handoffPrompt(input),
           parts: [{ type: 'text', text: handoffPrompt(input) }],
-          conversationId: input.conversationId,
         };
         const result = await callWithRetry(input.destination, [handoffMessage], controller.signal, input.conversationId);
         json(res, 200, {
