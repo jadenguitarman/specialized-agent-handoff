@@ -4,11 +4,7 @@ export default function Page() {
   return (
     <main className="demo-page">
       <section className="demo-copy" aria-labelledby="demo-title">
-        <p className="demo-eyebrow">Application-owned routing · Direct Agent Studio calls</p>
-        <h1 id="demo-title">Move the question, not the whole identity.</h1>
-        <p className="demo-intro">
-          A practical handoff between specialized agents. Start with Sales, then move to Support without restarting the conversation or passing along the user’s entire history.
-        </p>
+        <h1 id="demo-title">Routing between specialized agents</h1>
 
         <div className="usage-notes" aria-label="How to use the demo">
           <div className="usage-note">
@@ -21,11 +17,9 @@ export default function Page() {
           </div>
           <div className="usage-note">
             <span className="usage-number">03</span>
-            <div><strong>Watch the boundary</strong><span>The application resolves the destination and keeps recovery visible.</span></div>
+            <div><strong>See the routing</strong><span>The application resolves the destination and keeps recovery visible.</span></div>
           </div>
         </div>
-
-        <p className="demo-caption">On desktop, Support stays open beside this explanation. On mobile, tap the chat button to open it over the page.</p>
       </section>
 
       <Script
