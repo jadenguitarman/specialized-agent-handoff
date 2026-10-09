@@ -7,7 +7,7 @@ import { corsHeaders, isAllowedEmbedOrigin, preflightHeaders } from './src/embed
 
 const root = resolve(fileURLToPath(new URL('.', import.meta.url)));
 const publicRoot = join(root, 'public');
-const providerTimeoutMs = 12_000;
+const providerTimeoutMs = 30_000;
 const maxBodyBytes = 256 * 1024;
 
 const ALLOWED_AGENTS = Object.freeze({ sales: 'SALES_AGENT_STUDIO_AGENT_ID', support: 'SUPPORT_AGENT_STUDIO_AGENT_ID' });

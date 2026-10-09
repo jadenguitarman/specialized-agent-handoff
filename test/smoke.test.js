@@ -34,6 +34,7 @@ test('serves the chat shell without exposing provider credentials', async () => 
   const config = await fetch(`${baseUrl}/api/config`).then((result) => result.json());
   assert.equal(config.agents.sales, 'Sales');
   assert.equal(config.agents.support, 'Support');
+  assert.equal(config.timeoutMs, 30_000);
   assert.equal(Object.hasOwn(config.agents, 'id'), false);
   assert.equal(Object.hasOwn(config, 'apiKey'), false);
 });

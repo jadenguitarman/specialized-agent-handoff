@@ -16,7 +16,7 @@ for (const dotenvPath of [resolve(repoRoot, '..', '.env'), resolve(repoRoot, '.e
   }
 }
 
-const providerTimeoutMs = 12_000;
+export const providerTimeoutMs = 30_000;
 const allowedAgents = Object.freeze({ sales: 'SALES_AGENT_STUDIO_AGENT_ID', support: 'SUPPORT_AGENT_STUDIO_AGENT_ID' });
 const allowedDestinations = new Set(Object.keys(allowedAgents));
 const specialistLabels = Object.freeze({ sales: 'Sales', support: 'Support' });

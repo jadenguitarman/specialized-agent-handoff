@@ -1,4 +1,4 @@
-import { errorPayload, handleTransfer, ValidationError } from '../../../src/handoff-api.mjs';
+import { errorPayload, handleTransfer, providerTimeoutMs, ValidationError } from '../../../src/handoff-api.mjs';
 import { corsHeaders, isAllowedEmbedOrigin, preflightHeaders } from '../../../src/embed-cors.mjs';
 
 export const runtime = 'nodejs';
@@ -15,7 +15,7 @@ export function OPTIONS(request) {
 export async function POST(request) {
   const origin = request.headers.get('origin');
   try {
-    const result = await handleTransfer(await request.json(), AbortSignal.timeout(12_000));
+    const result = await handleTransfer(await request.json(), AbortSignal.timeout(providerTimeoutMs));
     return Response.json(result, { headers: corsHeaders(origin) });
   } catch (error) {
     const status = error instanceof ValidationError ? 400 : error.name === 'TimeoutError' || error.name === 'AbortError' ? 504 : error.status || 502;
