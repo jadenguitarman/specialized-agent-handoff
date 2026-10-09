@@ -16,6 +16,12 @@ test('ships a single-script widget with an explicit API base and handoff control
   assert.match(script, /renderMarkdown/);
   assert.match(script, /renderTable/);
   assert.match(script, /table-wrap/);
+  assert.match(script, /On a support page/);
+  assert.match(script, /On a product page/);
+  assert.match(script, /composer-row/);
+  assert.match(script, /text-align: center/);
+  assert.doesNotMatch(script, /Viewing a support ticket database/);
+  assert.doesNotMatch(script, /Viewing the plan pricing page/);
   assert.match(script, /role="radio"/);
   assert.match(script, /sample-question/);
   assert.match(script, /requestSubmit/);

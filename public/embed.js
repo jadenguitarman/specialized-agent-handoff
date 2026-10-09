@@ -51,7 +51,7 @@
       .desktop-persistent .close { display: none; }
       .panel-top { align-items: center; background: #273a31; display: flex; gap: 9px; padding: 10px 12px; }
       .view-switcher { display: grid; flex: 1; gap: 6px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .view-option { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.2); border-radius: 9px; color: #dce9de; cursor: pointer; font: 600 10px/1.2 Inter, ui-sans-serif, system-ui, sans-serif; min-height: 42px; padding: 7px 8px; text-align: left; transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, transform 140ms ease; }
+      .view-option { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.2); border-radius: 9px; color: #dce9de; cursor: pointer; font: 600 10px/1.2 Inter, ui-sans-serif, system-ui, sans-serif; min-height: 42px; padding: 7px 8px; text-align: center; transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, transform 140ms ease; }
       .view-option:hover { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.35); color: #fff; }
       .view-option[aria-checked="true"] { background: #dbe9dc; border-color: #dbe9dc; color: #273a31; }
       .view-option:active { transform: scale(.96); }
@@ -95,9 +95,10 @@
       .status:empty { display: none; }
       .status.error { color: #a24c3d; }
       .composer { background: #fbfaf7; border-top: 1px solid rgba(39,58,49,.1); padding: 12px 14px 13px; }
-      textarea { background: #fff; border: 1px solid rgba(39,58,49,.18); border-radius: 12px; color: #28332d; display: block; font: inherit; font-size: 13px; line-height: 1.4; min-height: 63px; padding: 10px 11px; resize: vertical; width: 100%; }
+      .composer-row { align-items: flex-end; display: flex; gap: 8px; }
+      textarea { background: #fff; border: 1px solid rgba(39,58,49,.18); border-radius: 12px; color: #28332d; display: block; flex: 1 1 auto; font: inherit; font-size: 13px; line-height: 1.4; min-height: 63px; min-width: 0; padding: 10px 11px; resize: vertical; width: auto; }
       textarea::placeholder { color: #9aa39c; }
-      .composer-actions { align-items: center; display: flex; gap: 8px; justify-content: flex-end; margin-top: 9px; }
+      .composer-actions { align-items: center; display: flex; flex: 0 0 auto; gap: 8px; justify-content: flex-end; }
       .send, .cancel { border: 0; border-radius: 9px; cursor: pointer; font-size: 11px; font-weight: 700; min-height: 38px; padding: 0 13px; transition: transform 140ms ease, background-color 140ms ease, opacity 140ms ease; }
       .send { background: #d99a4b; color: #2e291f; }
       .send:hover { background: #e2a75e; }
@@ -114,10 +115,10 @@
         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5.5 6.75A2.75 2.75 0 0 1 8.25 4h7.5a2.75 2.75 0 0 1 2.75 2.75v5.5A2.75 2.75 0 0 1 15.75 15H12l-3.8 3v-3H8.25a2.75 2.75 0 0 1-2.75-2.75v-5.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 9.75h6M9 12.25h3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
       </button>
       <section class="panel" id="specialized-agent-panel" role="dialog" aria-modal="false" aria-label="Specialist chat" aria-hidden="true">
-        <div class="panel-top"><div class="view-switcher" role="radiogroup" aria-label="Choose what you are viewing"><button class="view-option" type="button" role="radio" data-agent="support" aria-checked="false">Viewing a support ticket database</button><button class="view-option" type="button" role="radio" data-agent="sales" aria-checked="true">Viewing the plan pricing page</button></div><button class="close" type="button" aria-label="Close specialist chat"><svg viewBox="0 0 24 24" fill="none" width="19" height="19" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div>
+        <div class="panel-top"><div class="view-switcher" role="radiogroup" aria-label="Choose what you are viewing"><button class="view-option" type="button" role="radio" data-agent="support" aria-checked="false">On a support page</button><button class="view-option" type="button" role="radio" data-agent="sales" aria-checked="true">On a product page</button></div><button class="close" type="button" aria-label="Close specialist chat"><svg viewBox="0 0 24 24" fill="none" width="19" height="19" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div>
         <div class="messages" aria-live="polite"></div>
         <div class="status" role="status"></div>
-        <form class="composer"><textarea rows="2" aria-label="Message the active specialist" placeholder="Ask a question…"></textarea><div class="composer-actions"><button class="send" type="submit">Send</button><button class="cancel hidden" type="button">Cancel</button></div></form>
+        <form class="composer"><div class="composer-row"><textarea rows="2" aria-label="Message the active specialist" placeholder="Ask a question…"></textarea><div class="composer-actions"><button class="send" type="submit">Send</button><button class="cancel hidden" type="button">Cancel</button></div></div></form>
       </section>
     </div>
   `;
