@@ -410,7 +410,7 @@
     if (focusElement && wasAtBottom && focusElement.offsetHeight > elements.messages.clientHeight) {
       const messagesTop = elements.messages.getBoundingClientRect().top;
       const messageTop = focusElement.getBoundingClientRect().top;
-      elements.messages.scrollTop = Math.max(0, elements.messages.scrollTop + messageTop - messagesTop - 11);
+      elements.messages.scrollTop = Math.max(0, elements.messages.scrollTop + messageTop - messagesTop - 21);
     } else if (scroll === 'bottom' || wasAtBottom) {
       elements.messages.scrollTop = elements.messages.scrollHeight;
     } else {
