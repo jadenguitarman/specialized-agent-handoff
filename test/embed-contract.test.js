@@ -14,6 +14,8 @@ test('ships a single-script widget with an explicit API base and handoff control
   assert.match(script, /desktop-persistent/);
   assert.match(script, /min-width: 768px/);
   assert.match(script, /renderMarkdown/);
+  assert.match(script, /renderTable/);
+  assert.match(script, /table-wrap/);
   assert.match(script, /role="radio"/);
   assert.match(script, /sample-question/);
   assert.match(script, /requestSubmit/);

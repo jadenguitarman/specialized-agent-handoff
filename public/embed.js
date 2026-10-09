@@ -83,6 +83,10 @@
       .bubble h3 { color: #28332d; font: 600 14px/1.25 Georgia, serif; margin: 0 0 7px; }
       .bubble ul, .bubble ol { margin: 5px 0 9px; padding-left: 19px; }
       .bubble li + li { margin-top: 4px; }
+      .table-wrap { max-width: 100%; overflow-x: auto; }
+      .bubble table { border-collapse: collapse; font-size: 11px; min-width: 100%; width: max-content; }
+      .bubble th, .bubble td { border: 1px solid rgba(39,58,49,.12); padding: 7px 8px; text-align: left; vertical-align: top; }
+      .bubble th { background: #eef1eb; color: #28332d; font-weight: 700; }
       .bubble code { background: #eef1eb; border-radius: 4px; color: #3d5e46; font: 12px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace; padding: 2px 4px; }
       .bubble pre { background: #273a31; border-radius: 9px; color: #f6f5ef; font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; margin: 8px 0; overflow-x: auto; padding: 10px; white-space: pre-wrap; }
       .bubble pre code { background: transparent; color: inherit; padding: 0; }
@@ -199,6 +203,48 @@
     if (cursor < source.length) parent.append(document.createTextNode(source.slice(cursor)));
   }
 
+  function splitTableRow(line) {
+    const pipePlaceholder = '\u0000';
+    return line.trim().replace(/^\|/u, '').replace(/\|$/u, '').replace(/\\\|/gu, pipePlaceholder).split('|').map((cell) => cell.replace(new RegExp(pipePlaceholder, 'gu'), '|').trim());
+  }
+
+  function isTableDivider(line) {
+    const cells = splitTableRow(line);
+    return cells.length >= 2 && cells.every((cell) => /^:?-{3,}:?$/u.test(cell));
+  }
+
+  function renderTable(target, headerLine, dividerLine, bodyRows) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'table-wrap';
+    const table = document.createElement('table');
+    const header = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+    const headerCells = splitTableRow(headerLine);
+    const alignments = splitTableRow(dividerLine).map((cell) => cell.startsWith(':') && cell.endsWith(':') ? 'center' : cell.endsWith(':') ? 'right' : 'left');
+    headerCells.forEach((content, column) => {
+      const cell = document.createElement('th');
+      cell.style.textAlign = alignments[column] || 'left';
+      appendInlineMarkdown(cell, content);
+      headerRow.append(cell);
+    });
+    header.append(headerRow);
+    table.append(header);
+    const body = document.createElement('tbody');
+    bodyRows.forEach((row) => {
+      const tableRow = document.createElement('tr');
+      headerCells.forEach((_, column) => {
+        const cell = document.createElement('td');
+        cell.style.textAlign = alignments[column] || 'left';
+        appendInlineMarkdown(cell, row[column] || '');
+        tableRow.append(cell);
+      });
+      body.append(tableRow);
+    });
+    table.append(body);
+    wrapper.append(table);
+    target.append(wrapper);
+  }
+
   function renderMarkdown(target, source) {
     target.replaceChildren();
     const lines = String(source || '').replace(/\r\n?/gu, '\n').split('\n');
@@ -216,6 +262,20 @@
         code.textContent = codeLines.join('\n');
         pre.append(code);
         target.append(pre);
+        continue;
+      }
+      if (index + 1 < lines.length && isTableDivider(lines[index + 1])) {
+        const headerLine = line;
+        const dividerLine = lines[index + 1];
+        const bodyRows = [];
+        index += 2;
+        while (index < lines.length && lines[index].trim() && lines[index].includes('|')) {
+          const row = splitTableRow(lines[index]);
+          if (row.length < 2) break;
+          bodyRows.push(row);
+          index += 1;
+        }
+        renderTable(target, headerLine, dividerLine, bodyRows);
         continue;
       }
       const heading = line.match(/^#{1,3}\s+(.+)$/u);
