@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
+import { corsHeaders, isAllowedEmbedOrigin, preflightHeaders } from './src/embed-cors.mjs';
 
 const root = resolve(fileURLToPath(new URL('.', import.meta.url)));
 const publicRoot = join(root, 'public');
@@ -31,11 +32,10 @@ if (process.env.NODE_ENV !== 'test') {
 }
 const port = Number.parseInt(process.env.PORT ?? '3000', 10) || 3000;
 
-function json(res, status, payload) {
+function json(res, status, payload, origin) {
   const body = JSON.stringify(payload);
   res.writeHead(status, {
-    'Content-Type': 'application/json; charset=utf-8',
-    'Cache-Control': 'no-store',
+    ...corsHeaders(origin, { 'Content-Type': 'application/json; charset=utf-8' }),
     'Content-Length': Buffer.byteLength(body),
   });
   res.end(body);
@@ -258,28 +258,34 @@ function errorPayload(error) {
   };
 }
 
-async function serveStatic(req, res, pathname) {
+async function serveStatic(req, res, pathname, origin) {
   const requested = pathname === '/' ? '/index.html' : pathname;
   const filePath = normalize(join(publicRoot, requested));
-  if (filePath !== publicRoot && !filePath.startsWith(`${publicRoot}/`)) return json(res, 404, { error: 'not_found' });
+  if (filePath !== publicRoot && !filePath.startsWith(`${publicRoot}/`)) return json(res, 404, { error: 'not_found' }, origin);
   try {
     const body = await readFile(filePath);
     res.writeHead(200, { 'Content-Type': MIME_TYPES[extname(filePath)] || 'application/octet-stream' });
     res.end(body);
   } catch {
-    json(res, 404, { error: 'not_found' });
+    json(res, 404, { error: 'not_found' }, origin);
   }
 }
 
 const server = createServer(async (req, res) => {
   const requestUrl = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
+  const origin = req.headers.origin;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(new Error('Agent Studio request timed out.')), providerTimeoutMs);
   req.on('aborted', () => controller.abort(new Error('Request cancelled.')));
 
   try {
     if (req.method === 'GET' && requestUrl.pathname === '/api/config') {
-      json(res, 200, publicConfig());
+      json(res, 200, publicConfig(), origin);
+      return;
+    }
+    if (req.method === 'OPTIONS' && ['/api/config', '/api/chat', '/api/handoff'].includes(requestUrl.pathname)) {
+      res.writeHead(isAllowedEmbedOrigin(origin) ? 204 : 403, preflightHeaders(origin));
+      res.end();
       return;
     }
     if (req.method === 'POST' && (requestUrl.pathname === '/api/chat' || requestUrl.pathname === '/api/handoff')) {
@@ -287,7 +293,7 @@ const server = createServer(async (req, res) => {
       if (requestUrl.pathname === '/api/chat') {
         const input = validateChatBody(body);
         const result = await callWithRetry(input.agent, input.messages, controller.signal, input.conversationId);
-        json(res, 200, { ...result, agent: input.agent });
+        json(res, 200, { ...result, agent: input.agent }, origin);
       } else {
         const input = validateHandoffBody(body);
         const startedAt = Date.now();
@@ -309,22 +315,22 @@ const server = createServer(async (req, res) => {
             latencyMs: Date.now() - startedAt,
             contextBytes: Buffer.byteLength(JSON.stringify(input.context)),
           },
-        });
+        }, origin);
       }
       return;
     }
     if (req.method === 'GET') {
-      await serveStatic(req, res, requestUrl.pathname);
+      await serveStatic(req, res, requestUrl.pathname, origin);
       return;
     }
-    json(res, 405, { error: 'method_not_allowed' });
+    json(res, 405, { error: 'method_not_allowed' }, origin);
   } catch (error) {
     if (error instanceof ValidationError) {
-      json(res, 400, { error: 'validation_failed', message: error.message });
+      json(res, 400, { error: 'validation_failed', message: error.message }, origin);
     } else if (error.name === 'AbortError' || controller.signal.aborted) {
-      json(res, 504, { error: 'timeout', message: 'The Agent Studio request timed out or was cancelled.' });
+      json(res, 504, { error: 'timeout', message: 'The Agent Studio request timed out or was cancelled.' }, origin);
     } else {
-      json(res, error.status || 502, errorPayload(error));
+      json(res, error.status || 502, errorPayload(error), origin);
     }
   } finally {
     clearTimeout(timeout);
