@@ -23,9 +23,6 @@ export default function Page() {
       <Script
         src="/embed.js"
         data-open="desktop"
-        data-user-id="demo-user-01"
-        data-tenant-id="northstar-demo"
-        data-plan="growth"
         data-position="right"
         strategy="afterInteractive"
       />

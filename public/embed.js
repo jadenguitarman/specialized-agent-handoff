@@ -8,10 +8,7 @@
   const config = Object.freeze({
     apiBase,
     openMode: script.dataset.open === 'desktop' ? 'desktop' : 'click',
-    userId: script.dataset.userId || 'demo-user-01',
-    tenantId: script.dataset.tenantId || 'article-demo',
-    plan: script.dataset.plan || 'growth',
-    position: script.dataset.position === 'left' ? 'left' : 'right',
+    position: script.dataset.position === 'right' ? 'right' : 'left',
   });
   const labels = Object.freeze({ sales: 'Sales', support: 'Support' });
   const sampleQuestions = Object.freeze({

@@ -20,6 +20,8 @@ test('ships a single-script widget with an explicit API base and handoff control
   assert.match(script, /On a product page/);
   assert.match(script, /Chat with a specialist agent/);
   assert.match(script, /dataset\.position/);
+  assert.match(script, /position: script\.dataset\.position === 'right' \? 'right' : 'left'/);
+  assert.doesNotMatch(script, /script\.dataset\.(userId|tenantId|plan)/);
   assert.match(script, /composer-row/);
   assert.match(script, /text-align: center/);
   assert.doesNotMatch(script, /Viewing a support ticket database/);
@@ -49,5 +51,6 @@ test('documents cross-origin configuration without wildcard access', async () =>
   const readme = await readFile(new URL('README.md', root), 'utf8');
   assert.match(env, /EMBED_ALLOWED_ORIGINS/);
   assert.match(readme, /data-api-base/);
+  assert.doesNotMatch(readme, /data-title|data-user-id|data-tenant-id|data-plan/);
   assert.match(readme, /does not allow arbitrary cross-origin callers/);
 });
