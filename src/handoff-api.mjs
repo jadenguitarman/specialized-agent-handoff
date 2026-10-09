@@ -253,7 +253,11 @@ export async function handleTransfer(body, signal) {
     throw new ValidationError(`A ${specialistLabels[sourceAgent]} specialist can only transfer to the ${specialistLabels[destination]} specialist.`);
   }
   const messages = validateMessages(body?.messages);
-  const conversationId = optionalText(body?.conversationId, 'conversationId', 120) || `transfer_${randomUUID()}`;
+  // Agent Studio conversation IDs are scoped to the agent that owns them. The
+  // source ID is useful to the caller for its own bookkeeping, but reusing it
+  // for the destination causes a 409. The explicit message history carries
+  // the approved conversation context across the agent boundary instead.
+  const conversationId = `transfer_${randomUUID()}`;
   const opening = transferOpening(destination);
   const result = await callWithRetry(destination, [
     ...messages,
@@ -263,6 +267,7 @@ export async function handleTransfer(body, signal) {
   return {
     ...result,
     agent: destination,
+    conversationId,
     opening,
     transfer: result.transfer ? { ...result.transfer, sourceAgent: destination } : null,
   };

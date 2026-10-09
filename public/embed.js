@@ -312,6 +312,7 @@
       }, controller);
       event.status = 'complete';
       state.agent = destination;
+      state.conversationId = response.conversationId || `embed_${crypto.randomUUID()}`;
       if (response.opening) addMessage('assistant', response.opening, destination);
       if (response.content) addMessage('assistant', response.content, destination);
       render();
