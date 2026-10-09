@@ -71,10 +71,12 @@
       .transfer-event.error, .transfer-event.cancelled { color: #a24c3d; }
       .message { display: flex; gap: 8px; max-width: 91%; }
       .message.user { align-self: flex-end; flex-direction: row-reverse; }
-      .typing-bubble { align-items: center; display: flex; gap: 4px; min-height: 38px; }
+      .typing-message { animation: typing-entry 160ms ease-out both; }
+      .typing-bubble { align-items: center; display: flex; gap: 4px; justify-content: center; min-height: 38px; min-width: 72px; }
       .typing-dot { animation: typing-dot 1.1s ease-in-out infinite; background: #78927d; border-radius: 50%; height: 5px; width: 5px; }
       .typing-dot:nth-child(2) { animation-delay: 140ms; }
       .typing-dot:nth-child(3) { animation-delay: 280ms; }
+      @keyframes typing-entry { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
       @keyframes typing-dot { 0%, 60%, 100% { opacity: .35; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
       .avatar { align-items: center; background: #dbe9dc; border-radius: 50%; color: #385944; display: flex; flex: 0 0 28px; font-size: 11px; font-weight: 800; height: 28px; justify-content: center; width: 28px; }
       .user .avatar { background: #e7d7bd; color: #694d2e; }
@@ -111,7 +113,7 @@
       .send:active, .cancel:active { transform: scale(.96); }
       button:disabled, textarea:disabled { cursor: wait; opacity: .58; }
       .hidden { display: none !important; }
-      @media (prefers-reduced-motion: reduce) { .launcher, .panel, .view-option, .sample-question, .send, .cancel { transition: none; } .typing-dot { animation: none; opacity: .65; } }
+      @media (prefers-reduced-motion: reduce) { .launcher, .panel, .view-option, .sample-question, .send, .cancel { transition: none; } .typing-message, .typing-dot { animation: none; opacity: .65; } }
       @media (max-width: 767px) { .desktop-persistent .launcher { display: flex; } .desktop-persistent .panel { border-radius: 22px; bottom: 84px; max-height: calc(100vh - 100px); opacity: 0; pointer-events: none; right: 8px; top: auto; transform: translateY(10px) scale(.98); width: calc(100vw - 16px); } .desktop-persistent .panel.open { opacity: 1; pointer-events: auto; transform: translateY(0) scale(1); } .desktop-persistent .close { display: flex; } .launcher { bottom: 16px; ${config.position}: 16px; } .panel { bottom: 84px; ${config.position}: 8px; max-height: calc(100vh - 100px); width: calc(100vw - 16px); } .panel-top { align-items: flex-start; } .view-switcher { grid-template-columns: 1fr; } }
     </style>
     <div class="widget">
@@ -150,6 +152,8 @@
     timeline: [],
     conversationId: `embed_${crypto.randomUUID()}`,
     pending: null,
+    typingVisible: false,
+    typingTimer: null,
     sampleSelection: null,
     sampleTimer: null,
     lastFocus: null,
@@ -378,9 +382,9 @@
       row.append(avatar, wrap);
       elements.messages.append(row);
     }
-    if (state.pending) {
+    if (state.pending?.phase === 'agent' && state.typingVisible) {
       const row = document.createElement('article');
-      row.className = 'message assistant';
+      row.className = 'message assistant typing-message';
       const avatar = document.createElement('div');
       avatar.className = 'avatar';
       avatar.textContent = state.agent === 'sales' ? 'S' : 'P';
@@ -415,6 +419,9 @@
   }
 
   function setPending(pending) {
+    if (state.typingTimer) window.clearTimeout(state.typingTimer);
+    state.typingTimer = null;
+    state.typingVisible = false;
     state.pending = pending;
     const busy = Boolean(pending);
     elements.input.disabled = busy;
@@ -422,6 +429,15 @@
     elements.viewOptions.forEach((option) => { option.disabled = busy; });
     elements.cancel.classList.toggle('hidden', !busy);
     elements.cancel.disabled = !busy;
+    if (pending) {
+      state.typingTimer = window.setTimeout(() => {
+        state.typingTimer = null;
+        if (state.pending === pending && pending.phase === 'agent') {
+          state.typingVisible = true;
+          render();
+        }
+      }, 500);
+    }
   }
 
   async function request(path, body, controller) {
@@ -441,6 +457,12 @@
   }
 
   async function transferTo(destination, controller, depth = 0) {
+    if (state.pending) state.pending.phase = 'transfer';
+    if (state.typingTimer) window.clearTimeout(state.typingTimer);
+    state.typingTimer = null;
+    state.typingVisible = false;
+    const sourceAgent = state.agent;
+    addMessage('assistant', `That's a good question for a ${specialistLabel(destination)}. Let me loop them in.`, sourceAgent);
     const event = addTransferEvent(destination);
     render();
     try {
@@ -480,7 +502,7 @@
     const messageContent = content.trim();
     if (!messageContent || state.pending) return;
     const controller = new AbortController();
-    setPending({ controller });
+    setPending({ controller, phase: 'agent' });
     addMessage('user', messageContent);
     elements.input.value = '';
     setStatus('');

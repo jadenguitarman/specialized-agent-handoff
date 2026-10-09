@@ -27,7 +27,10 @@ test('ships a single-script widget with an explicit API base and handoff control
   assert.match(script, /requestSubmit/);
   assert.match(script, /focusMessage/);
   assert.match(script, /typing-dot/);
+  assert.match(script, /typing-entry/);
+  assert.match(script, /\}, 500\)/);
   assert.match(script, /is typing/);
+  assert.match(script, /Let me loop them in/);
   assert.doesNotMatch(script, /Contacting the \$\{specialistLabel/);
   assert.match(script, /Transferring to the/);
   assert.doesNotMatch(script, /Application-owned routing/);
