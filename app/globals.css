@@ -80,8 +80,16 @@ body {
   border-top: 1px solid var(--line);
   display: grid;
   gap: 0;
-  margin-top: clamp(42px, 6vw, 86px);
+  margin-top: 24px;
   max-width: 680px;
+}
+
+.usage-intro {
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.45;
+  margin: clamp(34px, 5vw, 68px) 0 0;
+  max-width: 560px;
 }
 
 .usage-note {
@@ -152,6 +160,10 @@ body {
   }
 
   .usage-notes {
+    margin-top: 30px;
+  }
+
+  .usage-intro {
     margin-top: 30px;
   }
 }
