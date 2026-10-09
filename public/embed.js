@@ -312,7 +312,10 @@
     }
   }
 
-  function render() {
+  function render({ scroll = 'preserve', focusMessage = null } = {}) {
+    const previousScrollTop = elements.messages.scrollTop;
+    const wasAtBottom = elements.messages.scrollHeight - elements.messages.clientHeight - previousScrollTop <= 8;
+    let focusElement = null;
     elements.viewOptions.forEach((option) => option.setAttribute('aria-checked', String(option.dataset.agent === state.agent)));
     elements.messages.replaceChildren();
     const label = document.createElement('div');
@@ -352,6 +355,7 @@
       }
       const row = document.createElement('article');
       row.className = `message ${item.role}`;
+      if (item === focusMessage) focusElement = row;
       const avatar = document.createElement('div');
       avatar.className = 'avatar';
       avatar.textContent = item.role === 'user' ? 'Y' : item.agent === 'sales' ? 'S' : 'P';
@@ -368,7 +372,15 @@
       row.append(avatar, wrap);
       elements.messages.append(row);
     }
-    elements.messages.scrollTop = elements.messages.scrollHeight;
+    if (focusElement && wasAtBottom && focusElement.offsetHeight > elements.messages.clientHeight) {
+      const messagesTop = elements.messages.getBoundingClientRect().top;
+      const messageTop = focusElement.getBoundingClientRect().top;
+      elements.messages.scrollTop = Math.max(0, elements.messages.scrollTop + messageTop - messagesTop - 1);
+    } else if (scroll === 'bottom' || wasAtBottom) {
+      elements.messages.scrollTop = elements.messages.scrollHeight;
+    } else {
+      elements.messages.scrollTop = previousScrollTop;
+    }
   }
 
   function setPending(pending) {
@@ -412,7 +424,8 @@
       state.conversationId = response.conversationId || `embed_${crypto.randomUUID()}`;
       if (response.opening) addMessage('assistant', response.opening, destination);
       if (response.content) addMessage('assistant', response.content, destination);
-      render();
+      const focusMessage = state.timeline.filter((item) => item.kind === 'message' && item.role === 'assistant').at(-1);
+      render({ focusMessage });
       if (response.transfer && depth < 2) await transferTo(response.transfer.destination, controller, depth + 1);
     } catch (error) {
       event.status = error.name === 'AbortError' ? 'cancelled' : 'error';
@@ -437,14 +450,17 @@
     if (!messageContent || state.pending) return;
     addMessage('user', messageContent);
     elements.input.value = '';
-    render();
+    render({ scroll: 'bottom' });
     const controller = new AbortController();
     setPending({ controller });
-    setStatus(`Contacting the ${specialistLabel(state.agent)}…`);
+    setStatus('');
     try {
       const response = await request('/api/chat', { agent: state.agent, conversationId: state.conversationId, messages: state.messages.slice(-12).map(({ role, content: messageContent }) => ({ role, content: messageContent })) }, controller);
       if (response.transfer) await transferTo(response.transfer.destination, controller);
-      else if (response.content) addMessage('assistant', response.content, response.agent);
+      else if (response.content) {
+        const focusMessage = addMessage('assistant', response.content, response.agent);
+        render({ focusMessage });
+      }
       setStatus('');
     } catch (error) {
       setStatus(error.name === 'AbortError' ? 'Request cancelled.' : error.message, true);
@@ -521,5 +537,5 @@
   if (desktopQuery.addEventListener) desktopQuery.addEventListener('change', handleDesktopChange);
   else desktopQuery.addListener(handleDesktopChange);
   applyOpenMode({ initial: true });
-  render();
+  render({ scroll: 'bottom' });
 })();
