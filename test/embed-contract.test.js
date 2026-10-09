@@ -18,6 +18,8 @@ test('ships a single-script widget with an explicit API base and handoff control
   assert.match(script, /table-wrap/);
   assert.match(script, /On a support page/);
   assert.match(script, /On a product page/);
+  assert.match(script, /Chat with a specialist agent/);
+  assert.match(script, /dataset\.position/);
   assert.match(script, /composer-row/);
   assert.match(script, /text-align: center/);
   assert.doesNotMatch(script, /Viewing a support ticket database/);

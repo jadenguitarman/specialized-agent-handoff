@@ -38,16 +38,17 @@
       :host { all: initial; }
       *, *::before, *::after { box-sizing: border-box; }
       .widget { color: #28332d; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; -webkit-font-smoothing: antialiased; }
-      .launcher { align-items: center; background: #273a31; border: 0; border-radius: 999px; bottom: 24px; box-shadow: 0 12px 30px rgba(24, 47, 36, .24), 0 2px 5px rgba(24, 47, 36, .18); color: #fff; cursor: pointer; display: flex; height: 58px; justify-content: center; position: fixed; ${config.position}: 24px; transition: transform 140ms ease, background-color 140ms ease, box-shadow 140ms ease; width: 58px; z-index: 2147483000; }
+      .launcher { align-items: center; background: #273a31; border: 0; border-radius: 999px; bottom: 24px; box-shadow: 0 12px 30px rgba(24, 47, 36, .24), 0 2px 5px rgba(24, 47, 36, .18); color: #fff; cursor: pointer; display: flex; gap: 9px; height: 58px; justify-content: center; padding: 0 18px; position: fixed; ${config.position}: 24px; transition: transform 140ms ease, background-color 140ms ease, box-shadow 140ms ease; z-index: 2147483000; }
       .launcher:hover { background: #1d2f27; box-shadow: 0 15px 34px rgba(24, 47, 36, .28), 0 2px 5px rgba(24, 47, 36, .18); transform: translateY(-2px); }
       .launcher:active { transform: scale(.96); }
       .launcher:focus-visible, button:focus-visible, textarea:focus-visible { outline: 3px solid #d99a4b; outline-offset: 3px; }
       .launcher svg { height: 25px; width: 25px; }
+      .launcher-label { font-size: 12px; font-weight: 700; letter-spacing: .01em; white-space: nowrap; }
       .unread { background: #e27a55; border: 3px solid #fff; border-radius: 50%; height: 13px; position: absolute; right: 0; top: 0; width: 13px; }
       .panel { background: #fbfaf7; border: 1px solid rgba(39, 58, 49, .12); border-radius: 22px; bottom: 94px; box-shadow: 0 24px 70px rgba(26, 48, 38, .2), 0 3px 12px rgba(26, 48, 38, .1); display: flex; flex-direction: column; max-height: min(680px, calc(100vh - 120px)); opacity: 0; overflow: hidden; pointer-events: none; position: fixed; ${config.position}: 24px; transform: translateY(10px) scale(.98); transform-origin: bottom ${config.position}; transition: opacity 150ms ease, transform 150ms ease; width: min(382px, calc(100vw - 32px)); z-index: 2147482999; }
       .panel.open { opacity: 1; pointer-events: auto; transform: translateY(0) scale(1); }
       .desktop-persistent .launcher { display: none; }
-      .desktop-persistent .panel { border-radius: 0; bottom: 0; max-height: none; opacity: 1; pointer-events: auto; right: 0; top: 0; transform: none; width: min(520px, 44vw); }
+      .desktop-persistent .panel { border-radius: 0; bottom: 0; max-height: none; opacity: 1; pointer-events: auto; ${config.position}: 0; top: 0; transform: none; width: min(520px, 44vw); }
       .desktop-persistent .close { display: none; }
       .panel-top { align-items: center; background: #273a31; display: flex; gap: 9px; padding: 10px 12px; }
       .view-switcher { display: grid; flex: 1; gap: 6px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -117,9 +118,10 @@
       @media (max-width: 767px) { .desktop-persistent .launcher { display: flex; } .desktop-persistent .panel { border-radius: 22px; bottom: 84px; max-height: calc(100vh - 100px); opacity: 0; pointer-events: none; right: 8px; top: auto; transform: translateY(10px) scale(.98); width: calc(100vw - 16px); } .desktop-persistent .panel.open { opacity: 1; pointer-events: auto; transform: translateY(0) scale(1); } .desktop-persistent .close { display: flex; } .launcher { bottom: 16px; ${config.position}: 16px; } .panel { bottom: 84px; ${config.position}: 8px; max-height: calc(100vh - 100px); width: calc(100vw - 16px); } .panel-top { align-items: flex-start; } .view-switcher { grid-template-columns: 1fr; } }
     </style>
     <div class="widget">
-      <button class="launcher" type="button" aria-expanded="false" aria-controls="specialized-agent-panel" aria-label="Open specialist chat">
+      <button class="launcher" type="button" aria-expanded="false" aria-controls="specialized-agent-panel" aria-label="Chat with a specialist agent">
         <span class="unread"></span>
         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5.5 6.75A2.75 2.75 0 0 1 8.25 4h7.5a2.75 2.75 0 0 1 2.75 2.75v5.5A2.75 2.75 0 0 1 15.75 15H12l-3.8 3v-3H8.25a2.75 2.75 0 0 1-2.75-2.75v-5.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 9.75h6M9 12.25h3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <span class="launcher-label">Chat with a specialist agent</span>
       </button>
       <section class="panel" id="specialized-agent-panel" role="dialog" aria-modal="false" aria-label="Specialist chat" aria-hidden="true">
         <div class="panel-top"><div class="view-switcher" role="radiogroup" aria-label="Choose what you are viewing"><button class="view-option" type="button" role="radio" data-agent="support" aria-checked="false">On a support page</button><button class="view-option" type="button" role="radio" data-agent="sales" aria-checked="true">On a product page</button></div><button class="close" type="button" aria-label="Close specialist chat"><svg viewBox="0 0 24 24" fill="none" width="19" height="19" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div>
